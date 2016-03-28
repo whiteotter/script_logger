@@ -1,6 +1,9 @@
 require "csv"
 require "script_logger/version"
 
+module ScriptLoggerInfo
+end
+
 class ScriptLogger
   attr_reader :headers, :log_name
   attr_accessor :entries

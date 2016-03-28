@@ -5,7 +5,7 @@ require 'script_logger/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "script_logger"
-  spec.version       = ScriptLogger::VERSION
+  spec.version       = ScriptLoggerInfo::VERSION
   spec.authors       = ["Drew Kitch"]
   spec.email         = ["drew.kitch@gmail.com"]
 
