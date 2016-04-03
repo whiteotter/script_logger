@@ -22,15 +22,19 @@ Or install it yourself as:
 
 ```ruby
 # Step One: Create the loggers
-successful_logger = ScriptLogger.new(log_name: 'successful changes', headers: [:first, :second, :third])
-unsuccessful_logger = ScriptLogger.new(log_name: 'unsuccessful changes', headers: [:first, :second, :third])
+
+require 'ostruct'
+successful_logger = ScriptLogger.new('successful changes', invoice: [:first_col, :second_col, {third_col: "renamed_third_col"}], extra_headers: [:success_message])
+unsuccessful_logger = ScriptLogger.new('unsuccessful changes', invoice: [{first_col: "first col renamed"}, :second_col, :third_col], extra_headers: [:fail_message])
 begin
   # Step Two: Log to the loggers
   2.times do |i|
     if i.odd?
-      successful_logger.log(first: 'you should know', second: "and commas, are, not, a problem", third: "newlines\nare\nnot\na problem")
+      invoice = OpenStruct.new(first_col: 'you should know', second_col: "and commas, are, not, a problem", third_col: "newlines\nare\nnot\na problem")
+      successful_logger.log(invoice: invoice, success_message: "it worked!")
     else
-      unsuccessful_logger.log(first: 'and missing headers', second: 'will be set to') # `nil`
+      failed_invoice = OpenStruct.new(first_col: 'and missing headers', second_col: 'will be set to nil')
+      unsuccessful_logger.log(invoice: failed_invoice, fail_message: "it failed, the right way")
     end
   end
 ensure
@@ -41,15 +45,15 @@ end
 
 ```
 ----successful changes -- 1 records-----
-first,second,third
+invoice_first_col,invoice_second_col,renamed_third_col,success_message
 you should know,"and commas, are, not, a problem","newlines
 are
 not
-a problem"
+a problem",it worked!
 
 ---unsuccessful changes -- 1 records----
-first,second,third
-and missing headers,will be set to,
+first col renamed,invoice_second_col,invoice_third_col,fail_message
+and missing headers,will be set to nil,,"it failed, the right way"
 ```
 
 ## Contributing

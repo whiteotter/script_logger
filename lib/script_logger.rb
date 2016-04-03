@@ -5,20 +5,42 @@ module ScriptLoggerInfo
 end
 
 class ScriptLogger
-  attr_reader :headers, :log_name
+  attr_reader :log_name, :target_obj_attributes, :extra_headers
   attr_accessor :entries
 
-  def initialize(args)
-    @log_name = args[:log_name]
-    @headers = args[:headers]
-    @entries = [] << CSV.generate_line(@headers).chomp
+  def initialize(name, args)
+    @log_name = name
+    @obj_headers = []
+    @target_obj_attributes = {}
+
+    args.each do |obj_name,obj_attrs|
+      next if obj_name == :extra_headers
+
+      @target_obj_attributes[obj_name] = []
+      obj_attrs.each do |column_info|
+        target_attr = column_info.is_a?(Hash) ? column_info.keys.first : column_info
+        @target_obj_attributes[obj_name] << target_attr
+      end
+
+      obj_attrs.each do |column_info|
+        column_name = column_info.is_a?(Hash) ? column_info.values.first : "#{obj_name}_#{column_info}"
+        @obj_headers << column_name
+      end
+    end
+
+    @extra_headers = args.fetch(:extra_headers,[])
+    @entries       = [] << CSV.generate_line(@obj_headers + @extra_headers).chomp
   end
 
   def log(entry)
-    unknown_entry_keys = entry.keys - headers
-    raise "Unknown Entry Keys: #{unknown_entry_keys}" if unknown_entry_keys.any?
-    ordered_entry = headers.map {|entry_key| entry.fetch(entry_key, nil)}
-    entries << CSV.generate_line(ordered_entry).chomp
+    entry_build = []
+    entry.each do |col_key,col_val|
+      if obj_attrs = target_obj_attributes[col_key]
+        entry_build += obj_attrs.map {|obj_attr| col_val.send(obj_attr) }
+      end
+    end
+    entry_build += extra_headers.map {|column| entry.fetch(column, nil)}
+    entries << CSV.generate_line(entry_build).chomp
   end
 
   def entry_count
@@ -42,7 +64,6 @@ STR
     <<-STR
 
 #{output}
-
 STR
   end
 end
